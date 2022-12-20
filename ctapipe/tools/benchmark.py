@@ -1,5 +1,7 @@
 # import os
+# import pathlib
 
+from ..benchmarks import DL1aIntensityBenchmark
 from ..core import Tool, traits
 
 # from ..core import Provenance, Tool, ToolConfigurationError, traits
@@ -17,39 +19,58 @@ class BenchmarksTool(Tool):
     name = "ctapipe-benchmark"
     description = traits.Unicode(__doc__)
 
+    input_file = traits.Path(
+        help="Location and name of input file",
+        allow_none=False,
+        exists=True,
+        directory_ok=False,
+        file_ok=True,
+    ).tag(config=True)
+
     outdir = traits.Path(
         exists=True,
         directory_ok=True,
-        help="The root directory in which to output results",
+        help="The root directory in which to collect results",
     ).tag(config=True)
 
     analysis_name = traits.Unicode(
         help="Name used when saving the benchmark output"
     ).tag(config=True)
 
-    #    aliases = dict(outdir="Benchmarks.outdir", analysis_name="Analysis name")
+    overwrite = traits.Bool(
+        default_value=False, help="If true, overwrite outputfile without asking"
+    ).tag(config=True)
+
+    stage = traits.Enum(
+        # You'll have to run it for each stage
+        ["dl1a", "dl1", "dl2a", "dl2e", "dl2sb", "dl3"],
+        help="Stage of the pipeline for which to generate benchmark output",
+    ).tag(config=True)
+
+    classes = [DL1aIntensityBenchmark]
+
     aliases = {
         ("o", "outdir"): "BenchmarksTool.outdir",
         ("n", "name"): "BenchmarksTool.analysis_name",
+        ("s", "stage"): "BenchmarksTool.stage",
+        ("i", "input"): "BenchmarksTool.input_file",
     }
-
-    def setup(self):
-        pass
 
     def start(self):
         print(self.outdir)
+        self.plot_maker.make_plots()
 
+    #        if self.result_dir.exists() and not self.overwrite:
+    #            raise ToolConfigurationError(
+    #                f"Result directory {self.result_dir} already exists, use `--overwrite` to overwrite"
+    #            )
 
-"""
     def setup(self):
-        if self.outdir is None:
-            raise ToolConfigurationError("You need to provide an --output file")
+        self.analysis_dir = self.outdir / self.analysis_name
+        self.analysis_dir.mkdir(exist_ok=True, parents=True)
 
-        if self.outdir.exists() and not self.overwrite:
-            raise ToolConfigurationError(
-                "Outputfile {self.output} already exists, use `--overwrite` to overwrite"
-            )
-"""
+        if self.stage == "dl1a":
+            self.plot_maker = DL1aIntensityBenchmark(parent=self)
 
 
 def main():
