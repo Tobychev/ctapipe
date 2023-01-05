@@ -7,7 +7,7 @@ from ..core import Tool, traits
 # from ..core import Provenance, Tool, ToolConfigurationError, traits
 
 
-class BenchmarksTool(Tool):
+class BenchmarkTool(Tool):
     """
     Create benchmark plots and tables for different stages of the cta-pipe
     workflow.
@@ -50,14 +50,15 @@ class BenchmarksTool(Tool):
     classes = [DL1aIntensityBenchmark]
 
     aliases = {
-        ("o", "outdir"): "BenchmarksTool.outdir",
-        ("n", "name"): "BenchmarksTool.analysis_name",
-        ("s", "stage"): "BenchmarksTool.stage",
-        ("i", "input"): "BenchmarksTool.input_file",
+        ("o", "outdir"): "BenchmarkTool.outdir",
+        ("n", "name"): "BenchmarkTool.analysis_name",
+        ("s", "stage"): "BenchmarkTool.stage",
+        ("i", "input"): "BenchmarkTool.input_file",
+        "overwrite": "BenchmarkTool.overwrite",
     }
 
     def start(self):
-        print(self.outdir)
+        self.log.info(self.outdir)
         self.plot_maker.make_plots()
 
     #        if self.result_dir.exists() and not self.overwrite:
@@ -70,11 +71,16 @@ class BenchmarksTool(Tool):
         self.analysis_dir.mkdir(exist_ok=True, parents=True)
 
         if self.stage == "dl1a":
-            self.plot_maker = DL1aIntensityBenchmark(parent=self)
+            self.plot_maker = DL1aIntensityBenchmark(
+                parent=self,
+                input_file=self.input_file,
+                analysis_dir=self.analysis_dir,
+                overwrite=self.overwrite,
+            )
 
 
 def main():
-    tool = BenchmarksTool()
+    tool = BenchmarkTool()
     tool.run()
 
 
