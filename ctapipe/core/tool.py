@@ -7,10 +7,12 @@ import re
 import textwrap
 from abc import abstractmethod
 from inspect import cleandoc
+from tempfile import mkdtemp
 from typing import Union
 
 import yaml
 from docutils.core import publish_parts
+from traitlets import TraitError
 
 try:
     import tomli as toml
@@ -332,6 +334,9 @@ class Tool(Application):
         argv: list(str)
             command-line arguments, or None to get them
             from sys.argv automatically
+
+        raises : bool
+            Whether to raise Exceptions (to test them) or not.
         """
 
         # return codes are taken from:
@@ -359,8 +364,9 @@ class Tool(Application):
             self.finish()
             self.log.info(f"Finished: {self.name}")
             Provenance().finish_activity(activity_name=self.name)
-        except ToolConfigurationError as err:
-            self.log.error(f"{err}.  Use --help for more info")
+        except (ToolConfigurationError, TraitError) as err:
+            self.log.error("%s", err)
+            self.log.error("Use --help for more info")
             exit_status = 2  # wrong cmd line parameter
         except KeyboardInterrupt:
             self.log.warning("WAS INTERRUPTED BY CTRL-C")
@@ -537,9 +543,20 @@ def export_tool_config_to_commented_yaml(tool_instance: Tool, classes=None):
     return "\n".join(lines)
 
 
-def run_tool(tool: Tool, argv=None, cwd=None, raises=False):
+def run_tool(tool: Tool, argv=None, cwd=None, raises=True):
     """
-    Utility run a certain tool in a python session without exitinig
+    Utility run a certain tool in a python session without exiting.
+
+    Parameters
+    ----------
+    argv : List[str]
+        List of command line arguments for the tool.
+    cwd : str or pathlib.Path
+        Path to a temporary working directory. If none, a new (random)
+        temporary directeory gets created.
+    raises : bool
+        If true, raises Exceptions from running tools, to test them.
+        If false, tools can return a non-zero exit code.
 
     Returns
     -------
@@ -547,7 +564,7 @@ def run_tool(tool: Tool, argv=None, cwd=None, raises=False):
         The return code of the tool, 0 indicates success, everything else an error
     """
     current_cwd = pathlib.Path().absolute()
-    cwd = pathlib.Path(cwd) if cwd is not None else current_cwd
+    cwd = pathlib.Path(cwd) if cwd is not None else mkdtemp()
     try:
         # switch to cwd for running and back after
         os.chdir(cwd)
