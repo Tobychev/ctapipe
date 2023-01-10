@@ -1,11 +1,13 @@
 # import astropy.table as tab
 import matplotlib.pyplot as plt
 import numpy as np
+from visualisers import plot_histograms
 
-from ..core import Provenance
+# from ..core import Provenance
+from ..core import traits
 from ..io import TableLoader
-from .benchmark import Benchmark
-from .plot_utils import decide_on_subplot_layout
+from .benchmark import Benchmark, BenchmarkPlot
+from .plot_utils import decide_on_subplot_layout, get_cameras_in_file, signed_abs_log10
 
 __all__ = ["DL1aIntensityBenchmark"]
 
@@ -15,7 +17,9 @@ class DL1aIntensityBenchmark(Benchmark):
     Produce intensity benchmark plots
     """
 
-    def make_plots(self):
+    camera_type = traits.String(help="the type of camera").tag(config=True)
+
+    def make_benchmarks(self):
         self.log.info(self.input)
         self.log.info("making plots")
         self.make_pixel_noise_signal_plot()
@@ -36,25 +40,10 @@ class DL1aIntensityBenchmark(Benchmark):
             outname = f"{camera}_Pixels_Noise_Signal"
             fig, hists = tel_pixel_noise_signal_plot(tels[camera], events, bins)
             self.save_figure(outname, fig, hists)
-            Provenance().add_output_file(outname, role="benchmark plot")
-            fig.savefig(outname)
 
 
-def get_cameras_in_file(tabload):
-    """
-    Simple function that returns the telescope numbers and camera types present in a file
-    """
-    tels_here = {
-        str(t): tabload.subarray.get_tel_ids(t)
-        for t in tabload.subarray.telescope_types
-    }
-    return tels_here, tels_here.keys()
-
-
-def signed_abs_log10(data):
-    """Calculate log10 while handling zero an negative entries by using the expression:
-    sign(x)*log10(̣|x|+1)"""
-    return np.sign(data) * np.log10(np.abs(data) + 1)
+class PixelNoisePlot(BenchmarkPlot):
+    pass
 
 
 def tel_pixel_noise_signal_plot(tels, table, bins, size_x_inch=11, size_y_inch=10):
@@ -66,40 +55,24 @@ def tel_pixel_noise_signal_plot(tels, table, bins, size_x_inch=11, size_y_inch=1
         pixels = table[tel]["true_image"].data.flatten()
         truth = table[tel]["true_image"].data.flatten()
         noise = table[tel]["image"].data.flatten()[truth == 0]
-        trans = np.sign(pixels) * np.log10(np.abs(pixels) + 1)
-        noist = np.sign(noise) * np.log10(np.abs(noise) + 1)
+        trans = signed_abs_log10(pixels)
+        noist = signed_abs_log10(noise)
         s_count, _ = np.histogram(trans, bins=bins)
         n_count, _ = np.histogram(noist, bins=bins)
         hists[tel] = (s_count, n_count)
 
     for tel, ax in zip(tels, axs.ravel()):
         s_count, n_count = hists[tel]
-        make_pixel_noise_signal_plot_from_hists(
+        plot_histograms(
             ax,
-            s_count,
-            n_count,
+            list(hists[tel]),
             bins,
             f"Telescope {tel}",
             "log10 PE",
             "Counts",
-            "Signal",
-            "Noise",
+            ["Signal", "Noise"],
         )
 
     # TODO: make hists into a list of HistFigure filled as apropriate
     plt.tight_layout()
     return fig, hists
-
-
-def make_pixel_noise_signal_plot_from_hists(
-    ax, s_count, n_count, bins, title, xlabel, ylabel, s_label, n_label
-):
-    ax.stairs(s_count, bins, fill=False, edgecolor="C2", label=s_label)
-    ax.stairs(n_count, bins, fill=False, edgecolor="C1", label=n_label)
-
-    ax.set_title(title)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.set_yscale("log")
-    ax.legend(loc="upper right")
-    return ax
