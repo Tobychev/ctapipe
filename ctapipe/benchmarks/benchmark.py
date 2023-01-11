@@ -4,6 +4,7 @@ import numpy as np
 from astropy.table import Table
 
 from ..core import Component, Provenance
+from ..io import TableLoader
 
 
 class Benchmark(Component):
@@ -32,19 +33,34 @@ class Benchmark(Component):
         pass
 
 
-class BenchmarkPlot:
+class BenchmarkPlot(Component):
+    """
+    Produce intensity benchmark plots
+    """
+
     def __init__(self, name, xlabel, ylabel, description=""):
         self.name = name
         self.description = description
         self.xlabel = xlabel
         self.ylabel = ylabel
+        self.figures = []
+
+    def fetch_table(self, infile, dl1_images=False, true_images=False, simulated=False):
+        tab = TableLoader(
+            self.input,
+            load_dl1_images=dl1_images,
+            load_true_images=true_images,
+            load_simulated=simulated,
+        )
+        Provenance().add_input_file(infile, role=f"Source file for {self.name} plot")
+        return tab
 
     def make_plot(self):
         self.prepare_data()
-        self.prepare_display()
+        self.layout_figures()
         return self.make_figure()
 
-    def make_data_container(self, type):
+    def _make_data_container(self, type):
         # Here we call the apropriate figure data container and set its properties
         pass
 
