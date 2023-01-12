@@ -19,28 +19,6 @@ class BenchmarkTool(Tool):
     name = "ctapipe-benchmark"
     description = traits.Unicode(__doc__)
 
-    input_file = traits.Path(
-        help="Location and name of input file",
-        allow_none=False,
-        exists=True,
-        directory_ok=False,
-        file_ok=True,
-    ).tag(config=True)
-
-    outdir = traits.Path(
-        exists=True,
-        directory_ok=True,
-        help="The root directory in which to collect results",
-    ).tag(config=True)
-
-    analysis_name = traits.Unicode(
-        help="Name used when saving the benchmark output"
-    ).tag(config=True)
-
-    overwrite = traits.Bool(
-        default_value=False, help="If true, overwrite outputfile without asking"
-    ).tag(config=True)
-
     stage = traits.Enum(
         # You'll have to run it for each stage
         ["dl1a", "dl1", "dl2a", "dl2e", "dl2sb", "dl3"],
@@ -50,32 +28,22 @@ class BenchmarkTool(Tool):
     classes = [DL1aIntensityBenchmark]
 
     aliases = {
-        ("o", "outdir"): "BenchmarkTool.outdir",
-        ("n", "name"): "BenchmarkTool.analysis_name",
         ("s", "stage"): "BenchmarkTool.stage",
-        ("i", "input"): "BenchmarkTool.input_file",
-        "overwrite": "BenchmarkTool.overwrite",
+        ("o", "outdir"): "Benchmark.outdir",
+        ("n", "name"): "Benchmark.analysis_name",
+        ("i", "input"): "Benchmark.input_file",
+        "overwrite": "Benchmark.overwrite",
     }
 
     def start(self):
-        self.log.info(self.outdir)
-        self.plot_maker.make_plots()
-
-    #        if self.result_dir.exists() and not self.overwrite:
-    #            raise ToolConfigurationError(
-    #                f"Result directory {self.result_dir} already exists, use `--overwrite` to overwrite"
-    #            )
+        self.log.info("Running benchmarks")
+        self.plot_maker.make_benchmarks()
 
     def setup(self):
-        self.analysis_dir = self.outdir / self.analysis_name
-        self.analysis_dir.mkdir(exist_ok=True, parents=True)
 
         if self.stage == "dl1a":
             self.plot_maker = DL1aIntensityBenchmark(
                 parent=self,
-                input_file=self.input_file,
-                analysis_dir=self.analysis_dir,
-                overwrite=self.overwrite,
             )
 
 
