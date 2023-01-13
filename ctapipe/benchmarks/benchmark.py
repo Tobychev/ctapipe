@@ -102,19 +102,19 @@ class BenchmarkPlot(Benchmark):
             hist1d = {"name": [], "bins": [], "counts": []}
             hist2d = {"name": [], "xbins": [], "ybins": [], "counts": []}
             for data in self.out_data[data_key]:
-                kind = data[0]
+                kind, data = data[0], data[1]
                 if kind == "hist1d":
-                    hist1d["name"] = data[1]
-                    hist1d["xlabel"] = data[2]
-                    hist1d["bins"] = data[3]
-                    hist1d["counts"] = data[4]
+                    hist1d["name"] = [f"{data[0]:>8s}"]
+                    hist1d["xlabel"] = [f"{data[1]:>12s}"]
+                    hist1d["bins"] = [data[2]]
+                    hist1d["counts"] = [data[3]]
                 elif kind == "hist2d":
-                    hist2d["name"] = data[1]
-                    hist2d["xlabel"] = data[2]
-                    hist2d["ylabel"] = data[3]
-                    hist2d["counts"] = data[4]
-                    hist2d["xbins"] = data[5]
-                    hist2d["ybins"] = data[6]
+                    hist2d["name"] = [f"{data[0]:>8s}"]
+                    hist2d["xlabel"] = [f"{data[1]:>12s}"]
+                    hist2d["ylabel"] = [f"{data[2]:>12s}"]
+                    hist2d["counts"] = [data[3]]
+                    hist2d["xbins"] = [data[4]]
+                    hist2d["ybins"] = [data[5]]
 
             kinds = {"hist1d": hist1d, "hist2d": hist2d}
             for kind_key in kinds.keys():

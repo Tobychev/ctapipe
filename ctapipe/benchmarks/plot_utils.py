@@ -20,7 +20,7 @@ def decide_on_subplot_layout(num_plots):
         return nx, ny
 
 
-def get_cameras_in_file(tabload):
+def get_cameras_in_table(tabload):
     """
     Simple function that returns the telescope numbers and camera types present in a file
     """

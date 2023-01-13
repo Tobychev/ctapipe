@@ -7,7 +7,7 @@ from ..core import traits
 from .benchmark import Benchmark, BenchmarkPlot
 from .plot_utils import (
     decide_on_subplot_layout,
-    get_cameras_in_file,
+    get_cameras_in_table,
     signed_abs_log10,
     symlogspace,
 )
@@ -51,7 +51,7 @@ class PixelNoisePlot(BenchmarkPlot):
 
     def prepare_data(self):
         tab = self.fetch_table(self.input_file, dl1_images=True, true_images=True)
-        tels, cams = get_cameras_in_file(self.input_file)
+        tels, cams = get_cameras_in_table(tab)
         self.tels = tels
         self.cameras = cams
         # For performance reasons we only fetch a few thousand events
@@ -90,8 +90,7 @@ class PixelNoisePlot(BenchmarkPlot):
             hists = {tel: (s, n) for tel, s, n in self.data[camera]}
             for tel, ax in zip(self.tels[camera], axs.ravel()):
                 plot_kwd = {
-                    "norm": "log",
-                    "cmap": "viridis",
+                    "yscale": "log",
                     "xlabel": "log10 PE",
                     "ylabel": "Counts",
                     "hist_labels": ["Signal", "Noise"],

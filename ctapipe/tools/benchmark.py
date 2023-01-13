@@ -25,7 +25,7 @@ class BenchmarkTool(Tool):
         help="Stage of the pipeline for which to generate benchmark output",
     ).tag(config=True)
 
-    classes = [DL1aIntensityBenchmark]
+    #    classes = [DL1aIntensityBenchmark]
 
     aliases = {
         ("s", "stage"): "BenchmarkTool.stage",
