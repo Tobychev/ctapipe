@@ -126,7 +126,9 @@ class ChargeResolutionPlot(BenchmarkPlot):
 
     def prepare_data(self):
         tab = self.fetch_table(self.input_file, dl1_images=True, true_images=True)
-        events = tab.read_telescope_events(start=0, stop=8000)
+        events = tab.read_telescope_events_by_type(start=0, stop=8000)
+
+        self.cameras = events.keys()
 
         x_bin_edges_counts = np.logspace(
             self.x_bin_start, self.x_bin_stop, self.x_bin_num
@@ -136,25 +138,37 @@ class ChargeResolutionPlot(BenchmarkPlot):
         )
 
         bins = (x_bin_edges_counts, y_bin_edges_counts)
+        hists = {}
+        for camera in self.cameras:
+            X = events[camera]["true_image"].data.flatten()
+            Y = events[camera]["image"].data.flatten()
+            mask = X > 0
+            reldif = Y[mask] / X[mask]
 
-        X = events["true_image"].data.flatten()
-        Y = events["image"].data.flatten()
-        mask = X > 0
-        reldif = Y[mask] / X[mask]
-        self.data = np.histogram2d(X[mask], reldif, bins=bins)
+            hists[camera] = np.histogram2d(X[mask], reldif, bins=bins)
 
-        self.book_hist2d("charge resolution", "True PE", "Reco/Truth", *self.data)
+            self.book_hist2d(
+                f"{camera} charge resolution",
+                "True PE",
+                "Reco/Truth",
+                *hists[camera],
+                key=camera,
+            )
+
+        self.data = hists
 
     def layout_figures(self):
-        fig, axs = plt.subplots(figsize=(self.size_x_inch, self.size_y_inch))
-        H, xedges, yedges = self.data
-        plot_kwd = {
-            "xscale": "symlog",
-            "yscale": "symlog",
-            "norm": "log",
-            "cmap": "viridis",
-            "xlabel": "True PE",
-            "ylabel": "Reco/Truth",
-        }
-        plot_hist2D(axs, H, xedges, yedges, **plot_kwd)
-        self.figures = (fig, plot_kwd)
+        self.figures = {}
+        for camera in self.cameras:
+            fig, axs = plt.subplots(figsize=(self.size_x_inch, self.size_y_inch))
+            H, xedges, yedges = self.data[camera]
+            plot_kwd = {
+                "xscale": "symlog",
+                "yscale": "symlog",
+                "norm": "log",
+                "cmap": "viridis",
+                "xlabel": "True PE",
+                "ylabel": "Reco/Truth",
+            }
+            plot_hist2D(axs, H, xedges, yedges, **plot_kwd)
+            self.figures[camera] = (fig, plot_kwd)

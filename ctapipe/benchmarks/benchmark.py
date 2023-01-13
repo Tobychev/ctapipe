@@ -82,22 +82,25 @@ class BenchmarkPlot(Benchmark):
 
     def _save_figures(self):
         """If the figures are saved in a dictionary, this conveys one figure should be saved per key"""
+        self.log.info("Start saving figures")
         if isinstance(self.figures, dict):
             names = [f"{self.name}_{key}" for key in self.figures.keys()]
-            for name in names:
+            for key, name in zip(self.figures.keys(), names):
                 outname = self.analysis_dir / name
                 self._check_if_exist_and_handle(outname)
-                fig, plot_kwd = self.figures[name]
-                fig.savefig(outname, self.figure_format)
+                fig, plot_kwd = self.figures[key]
+                fig.savefig(outname, format=self.figure_format)
                 Provenance().add_output_file(outname, role=f"{name} plot")
         else:
             outname = self.analysis_dir / self.name
             self._check_if_exist_and_handle(outname)
             fig, plot_kwd = self.figures
-            fig.savefig(outname, self.figure_format)
+            fig.savefig(outname, format=self.figure_format)
             Provenance().add_output_file(outname, role=f"{self.name} plot")
+        self.log.info("done")
 
     def _save_data(self):
+        self.log.info("Saving data")
         for data_key in self.out_data.keys():
             hist1d = {"name": [], "bins": [], "counts": []}
             hist2d = {"name": [], "xbins": [], "ybins": [], "counts": []}

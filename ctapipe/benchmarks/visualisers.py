@@ -10,6 +10,7 @@ def plot_hist2D(
     yedges,
     xlabel,
     ylabel,
+    title="",
     xscale="linear",
     yscale="linear",
     norm="log",
@@ -21,6 +22,7 @@ def plot_hist2D(
 
     xg, yg = np.meshgrid(xedges, yedges)
     ax.pcolormesh(xg, yg, hist.T, norm=norm, cmap=cmap)
+    ax.set_title(title)
     ax.set_xscale(xscale)
     ax.set_xlabel(xlabel)
     ax.set_yscale(yscale)
